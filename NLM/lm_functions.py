@@ -6,11 +6,10 @@ from transformers import XLNetTokenizer, XLNetLMHeadModel, XLNetModel
 
 
 # XLNet
-
 tokenizer = XLNetTokenizer.from_pretrained("xlnet-large-cased")
 model = XLNetLMHeadModel.from_pretrained("xlnet-large-cased")
 
-def XLNetLM_getLogits(text):
+def XLNet_LM(text):
   tokens = torch.tensor(tokenizer.encode(text, add_special_tokens=False))
   model.to("cuda:0")
   outputs = model(tokens.unsqueeze(0).to("cuda:0"))
@@ -18,10 +17,10 @@ def XLNetLM_getLogits(text):
   return logits
 
 
-def XLNet_getLogits(text,masked=False):
+def XLNet_maskedModel(text,bidirectional=False):
     input_ids = torch.tensor(tokenizer.encode(text, add_special_tokens=False)).unsqueeze(0).to("cuda:0")
     perm_mask = torch.zeros((1, input_ids.shape[1], input_ids.shape[1]), dtype=torch.float).to("cuda:0")
-    if masked == False:
+    if bidirectional == False:
       mask_pos = -1
     else:
       mask_idx = tokenizer.encode("<mask>",add_special_tokens=False)[0]
@@ -40,3 +39,10 @@ def XLNet_getLogits(text,masked=False):
  def getTokenScore(logits,word):
  	token = tokenizer.encode(word, add_special_tokens=False)
  	return torch.sum(torch.log(torch.softmax(logits[-1,-1],dim=0)[token]))
+
+
+def compute_alignments(text,tokens):
+  orig_tokens = text.split()
+  token_list = [tokenizer.decode(token) for token in tokens]
+  alignments, _ = tokenizations.get_alignments(orig_tokens,token_list)
+  return alignments
